@@ -1,5 +1,7 @@
 from enum import Enum
 from bs4 import BeautifulSoup
+
+from datetime import datetime
 try:
    from person import GSPerson
    from person import GSRole
@@ -36,6 +38,8 @@ class GSCourse():
 
         assignments_table = parsed_assignments_resp.find('table', id="assignments-student-table")
 
+        current_time = datetime.now()
+        # print(current_time)
         for row in assignments_table.find_all('tr'):
           assignment_name = row.contents[0].string
           assignment_status = row.find('div', class_="submissionStatus--text")
@@ -44,8 +48,30 @@ class GSCourse():
           if assignment_status is None:
             continue
 
+          if assignment_status == "Submitted":
+            continue
+
+          # print("Assignment dues")
+          # print(type(assignment_dues))
+          # print(assignment_dues[-1])
+          # print(len(assignment_dues))
+          # for due in assignment_dues:
+          #   print(due.string)
+
+          last_deadline_string = (assignment_dues[-1]).string.replace("Late Due Date: ", '')
+          # print(last_deadline_string)
+          # abbreviated month - day - hour:minute am/pm
+          last_deadline = datetime.strptime(last_deadline_string, "%b %d at %I:%M%p")
+
+          # Gradscope datetime doesn't specify year, so add it here
+          last_deadline = last_deadline.replace(year=current_time.year)
+          # print(last_deadline)
+
+          if current_time > last_deadline:
+            continue
+          
           print(assignment_name)
-          print(assignment_status.string)
+          # print(assignment_status.string)
           for due in assignment_dues:
             print(due.string)
           print()
