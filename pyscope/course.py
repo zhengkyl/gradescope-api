@@ -48,7 +48,7 @@ class GSCourse():
           if assignment_status is None:
             continue
 
-          if assignment_status == "Submitted":
+          if assignment_status.string == "Submitted":
             continue
 
           # print("Assignment dues")
