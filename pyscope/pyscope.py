@@ -1,6 +1,10 @@
 import requests
 from bs4 import BeautifulSoup
 from enum import Enum
+
+from dotenv import dotenv_values
+import os
+
 try:
    from account import GSAccount
 except ModuleNotFoundError:
@@ -63,43 +67,64 @@ class GSConnection():
         if self.state != ConnState.LOGGED_IN:
             return False # Should raise exception
         # Get account page and parse it using bs4
-        account_resp = self.session.get("https://www.gradescope.com/account")
+        account_resp = self.session.get("https://www.gradescope.com/")
         parsed_account_resp = BeautifulSoup(account_resp.text, 'html.parser')
 
         # Get instructor course data
-        instructor_courses = parsed_account_resp.find('h1', class_ ='pageHeading').next_sibling
+        # instructor_courses = parsed_account_resp.find('h1', class_ ='pageHeading').next_sibling
         
-        for course in instructor_courses.find_all('a', class_ = 'courseBox'):
-            shortname = course.find('h3', class_ = 'courseBox--shortname').text
-            name = course.find('h4', class_ = 'courseBox--name').text
-            cid = course.get("href").split("/")[-1]
-            year = None
-            print(cid, name, shortname)
-            for tag in course.parent.previous_siblings:
-                if 'courseList--term' in tag.get("class"):
-                    year = tag.string
-                    break
-            if year is None:
-                return False # Should probably raise an exception.
-            self.account.add_class(cid, name, shortname, year, instructor = True)
+        # for course in instructor_courses.find_all('a', class_ = 'courseBox'):
+        #     shortname = course.find('h3', class_ = 'courseBox--shortname').text
+        #     name = course.find('h4', class_ = 'courseBox--name').text
+        #     cid = course.get("href").split("/")[-1]
+        #     year = None
+        #     print(cid, name, shortname)
+        #     for tag in course.parent.previous_siblings:
+        #         if 'courseList--term' in tag.get("class"):
+        #             year = tag.string
+        #             break
+        #     if year is None:
+        #         return False # Should probably raise an exception.
+        #     self.account.add_class(cid, name, shortname, year, instructor = True)
 
-        student_courses = parsed_account_resp.find('h1', class_ ='pageHeading', string = "Student Courses").next_sibling
-        for course in student_courses.find_all('a', class_ = 'courseBox'):
+        student_courses = parsed_account_resp.find('h1', class_ ='pageHeading', string = "Your Courses").next_sibling
+        latest_term = student_courses.find('div', class_ = 'courseList--coursesForTerm')
+        year = None
+        for tag in latest_term.parent.previous_siblings:
+            if tag.get("class") == "courseList--term pageSubheading":
+                year = tag.body
+                break
+        
+        course_list = latest_term.find_all('a')
+        for course in course_list:
             shortname = course.find('h3', class_ = 'courseBox--shortname').text
             name = course.find('h4', class_ = 'courseBox--name').text
             cid = course.get("href").split("/")[-1]
-            
-            for tag in course.parent.previous_siblings:
-                if tag.get("class") == "courseList--term pageSubheading":
-                    year = tag.body
-                    break
-            if year is None:
-                return False # Should probably raise an exception.
+            print(shortname + " " + name)
             self.account.add_class(cid, name, shortname, year)
 
-# THIS IS STRICTLY FOR DEVELOPMENT TESTING :( Sorry for leaving it in.
+
+        # for course in student_courses.find_all('a', class_ = 'courseBox'):
+        #     shortname = course.find('h3', class_ = 'courseBox--shortname').text
+        #     name = course.find('h4', class_ = 'courseBox--name').text
+        #     cid = course.get("href").split("/")[-1]
+            
+        #     for tag in course.parent.previous_siblings:
+        #         if tag.get("class") == "courseList--term pageSubheading":
+        #             year = tag.body
+        #             break
+        #     if year is None:
+        #         return False # Should probably raise an exception.
+        #     self.account.add_class(cid, name, shortname, year)
+
 if __name__=="__main__":
+    config = dotenv_values('.env')
     conn = GSConnection()
-    conn.login("email", "password")
+    conn.login(config["GRADESCOPE_EMAIL"], config["GRADESCOPE_PASSWORD"])
     print(conn.state)
     conn.get_account()
+
+    for course in conn.account.student_courses.values():
+       course.get_student_assignments()
+
+
