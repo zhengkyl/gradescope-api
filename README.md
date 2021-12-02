@@ -1,3 +1,9 @@
+# Fork Info
+
+This is a WIP tool to fetch all due assignments, because I keep forgetting about assignments. Most of the forked code is based on an instructor's access and is irrelevant for students. That is why most of the code is commented out.
+
+Login info moved to a `.env` file with a `GRADESCOPE_EMAIL` and `GRADESCOPE_PASSWORD` as keys.
+
 # Gradescope API
 This is an initial attempt at reverse engineering gradescope to allow for automated submission and controlling other
 behaviour in an automated way as there is no official gradescope API.
