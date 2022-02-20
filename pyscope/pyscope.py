@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 from enum import Enum
-
+import sys
 from dotenv import dotenv_values
 
 try:
@@ -122,7 +122,11 @@ class GSConnection():
 
 
 if __name__ == "__main__":
-  config = dotenv_values('.env')
+  if len(sys.argv) < 2:
+    print('missing argument: path to env file with email and password')
+    sys.exit()
+  env_path = sys.argv[1]
+  config = dotenv_values(env_path)
   conn = GSConnection()
   conn.login(config["GRADESCOPE_EMAIL"], config["GRADESCOPE_PASSWORD"])
   print(conn.state)
